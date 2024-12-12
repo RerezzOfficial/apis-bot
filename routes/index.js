@@ -1,32 +1,51 @@
 const express = require('express');
-const session = require('express-session');
-const app = express();
-const path = require('path');
-const port = 3000;
+const router = express.Router();
 
-// Middleware untuk body parsing
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+// Simulasi database user
+const users = {
+    user1: { username: 'user1', password: 'password123' }
+};
 
-// Set EJS sebagai templating engine
-app.set('view engine', 'html');
-app.engine('html', require('ejs').renderFile);
-
-// Middleware untuk session
-app.use(session({
-    secret: 'secret_key', // ganti dengan key yang lebih aman
-    resave: false,
-    saveUninitialized: true,
-}));
-
-// Routing
-const routes = require('./routes/index');
-app.use('/', routes);
-
-// Menyajikan file statis dari folder public
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Menjalankan server
-app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
+// Halaman utama (Landing Page)
+router.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../views/index.html'));
 });
+
+// Halaman login
+router.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, '../views/login.html'));
+});
+
+// Proses login
+router.post('/login', (req, res) => {
+    const { username, password } = req.body;
+    
+    // Cek user di database (simulasi)
+    if (users[username] && users[username].password === password) {
+        req.session.user = username;  // Menyimpan user di session
+        res.redirect('/dashboard');
+    } else {
+        res.send('Invalid username or password');
+    }
+});
+
+// Halaman dashboard
+router.get('/dashboard', (req, res) => {
+    if (req.session.user) {
+        res.sendFile(path.join(__dirname, '../views/dashboard.html'));
+    } else {
+        res.redirect('/login');
+    }
+});
+
+// Logout
+router.get('/logout', (req, res) => {
+    req.session.destroy((err) => {
+        if (err) {
+            return res.send('Error during logout');
+        }
+        res.redirect('/');
+    });
+});
+
+module.exports = router;
